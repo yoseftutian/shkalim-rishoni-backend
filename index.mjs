@@ -1,6 +1,7 @@
 import express, { json } from "express";
 import Products from "./products.mjs";
 import Users from "./users.mjs";
+import Todos from "./todos.mjs";
 import { expressjwt as jwt } from "express-jwt";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -21,6 +22,7 @@ app.use(
 );
 app.use("/products", Products);
 app.use("/users", Users);
+app.use("/todos", Todos);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

@@ -20,4 +20,6 @@ try {
 const db = cluster.db("totahim");
 export const productsCollection = db.collection("products");
 export const usersCollection = db.collection("users");
+export const todosCollection = db.collection("todos");
+
 export default db;
