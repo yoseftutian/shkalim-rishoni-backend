@@ -1,24 +1,31 @@
 import { Router } from "express";
-import { todosCollection, usersCollection } from "./database.mjs";
+import { client, todosCollection, usersCollection } from "./database.mjs";
 import { ObjectId } from "mongodb";
 const router = Router();
 
 router.post("/:id", async (req, res, next) => {
+  const session = client.startSession();
   try {
     const data = {
       ...req.body,
       finished: false,
       date: new Date(),
     };
-    const createdTodo = await todosCollection.insertOne(data);
+    session.startTransaction();
+    const createdTodo = await todosCollection.insertOne(data, { session });
     await usersCollection.updateOne(
       { _id: new ObjectId(req.params.id) },
-      { $push: { todos: createdTodo.insertedId } }
+      { $push: { todos: createdTodo.insertedId } },
+      { session }
     );
+    await session.commitTransaction();
     data["_id"] = createdTodo.insertedId;
     res.status(201).send(data);
   } catch (error) {
+    session.abortTransaction();
     next(error);
+  } finally {
+    session.endSession();
   }
 });
 
@@ -48,12 +55,26 @@ router.patch("/:id", async (req, res, next) => {
   }
 });
 
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id/:user_id", async (req, res, next) => {
+  const session = client.startSession();
   try {
-    await todosCollection.deleteOne({ _id: new ObjectId(req.params.id) });
+    session.startTransaction();
+    await todosCollection.deleteOne(
+      { _id: new ObjectId(req.params.id) },
+      { session }
+    );
+    await usersCollection.updateOne(
+      { _id: new ObjectId(req.params.user_id) },
+      { $pull: { todos: { _id: req.params.id } } },
+      { session }
+    );
+    await session.commitTransaction();
     res.status(200).send("Deleted successfully");
   } catch (error) {
+    session.abortTransaction();
     next(error);
+  } finally {
+    session.endSession();
   }
 });
 
