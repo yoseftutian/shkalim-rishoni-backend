@@ -10,7 +10,7 @@ dotenv.config();
 // console.log(randomBytes(64).toString("hex"));
 
 const app = express();
-const port = 3001;
+const port = 3005;
 
 app.use(json());
 app.use(cors());
